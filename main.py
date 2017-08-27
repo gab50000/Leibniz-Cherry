@@ -1,3 +1,4 @@
+import logging
 import os
 import time
 import tempfile
@@ -6,44 +7,49 @@ import cherrypy
 from cherrypy.lib import static
 
 
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
+
+
 class Test:
     @cherrypy.expose
-    def index(self):
-        return '<META http-equiv="refresh" content="5;URL=/hello">'
-
-    @cherrypy.expose
     def hello(self):
-        return "Hello"
+        return "<b>Hello</b>"
 
     @cherrypy.expose
-    def fup(self):
+    def index(self):
         return """
         <html><body>
             <h2>Upload a file</h2>
             <form action="upload" method="post" enctype="multipart/form-data">
-            filename: <input type="file" name="my_file" /><br />
+            Filename: <input type="file" name="my_file" /><br />
             <input type="submit" />
             </form>
-            <h2>Download a file</h2>
-            <a href='download'>This one</a>
         </body></html>
         """
 
     @cherrypy.expose
     def upload(self, my_file):
-        with open(os.path.join(PATH, "files", my_file.filename), "wb") as f:
-            while True:
-                data = my_file.file.read(8192)
-                if not data:
-                    break
-                f.write(data)
-        return '<META http-equiv="refresh" content="1;URL=/download?filename={}">'.format(my_file.filename)
+        if not my_file.filename.endswith(".zip"):
+            return """
+            <p>Bitte ein Zipfile hochladen</p>
+            <a href="/index">Zurück</a>
+            """
+
+        tmpf = tempfile.NamedTemporaryFile(delete=False)
+        logger.debug(f"Temporary file {tmpf.name} created")
+        while True:
+            data = my_file.file.read(8192)
+            if not data:
+                break
+            tmpf.write(data)
+        return '<META http-equiv="refresh" content="1;URL=/download?filename={}">'.format(tmpf.name)
 
     @cherrypy.expose
     def download(self, filename):
-        filepath = os.path.join(PATH, "files", filename)
-        return static.serve_file(filepath, "application/x-download", "attachment", 
-                                os.path.basename(filepath))
+        # TODO: Delete file after download
+        return static.serve_file(filename, "application/x-download", "attachment", 
+                                 "result.xml")
 
 
 if __name__ == "__main__":
