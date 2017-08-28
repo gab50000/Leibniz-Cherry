@@ -5,6 +5,7 @@ import tempfile
 from io import BytesIO
 from zipfile import ZipFile
 import subprocess
+import configparser
 
 import cherrypy
 from cherrypy.lib import static
@@ -16,6 +17,11 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 PLASTEX_PATH = ""
+
+cf = configparser.ConfigParser()
+cf.read("auth")
+USER = cf["auth"]["user"]
+PASS = cf["auth"]["password"]
 
 
 SUBMIT_FORM = """
@@ -50,6 +56,10 @@ def process(dir_name):
                 return process(os.path.join(dir_name, contained_files[0]))
 
 
+def authenticate(realm, user, password):
+    return user == USER and password == PASS
+
+
 class Main:
     @cherrypy.expose
     def index(self):
@@ -77,11 +87,11 @@ class Main:
             if result:
                 logger.debug(f"Result file: {result}")
                 return static.serve_file(os.path.join(tmp_dir, result), "application/x-download",
-                                         "attachment", "result.xml")
+                                         "attachment", result)
             else:
                 return "<b> Keine Tex-Datei gefunden!</b>"
 
 
 if __name__ == "__main__":
     cherrypy.config.update("cherry.cfg")
-    cherrypy.quickstart(Main())
+    cherrypy.quickstart(Main(), "/", "cherry.cfg")
