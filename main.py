@@ -11,22 +11,25 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
 
-class Test:
+SUBMIT_FORM = """
+<html><body>
+    <h2>Zip-File auswählen:</h2>
+    <form action="upload" method="post" enctype="multipart/form-data">
+    <input type="file" name="my_file" /><br />
+    <input type="submit" />
+    </form>
+</body></html>
+"""
+
+
+class Main:
     @cherrypy.expose
     def hello(self):
-        return "<b>Hello</b>"
+        return "<b>Hello there</b>"
 
     @cherrypy.expose
     def index(self):
-        return """
-        <html><body>
-            <h2>Upload a file</h2>
-            <form action="upload" method="post" enctype="multipart/form-data">
-            Filename: <input type="file" name="my_file" /><br />
-            <input type="submit" />
-            </form>
-        </body></html>
-        """
+        return SUBMIT_FORM
 
     @cherrypy.expose
     def upload(self, my_file):
@@ -53,4 +56,4 @@ class Test:
 
 
 if __name__ == "__main__":
-    cherrypy.quickstart(Test())
+    cherrypy.quickstart(Main())
