@@ -83,4 +83,5 @@ class Main:
 
 
 if __name__ == "__main__":
+    cherrypy.config.update("cherry.cfg")
     cherrypy.quickstart(Main())
