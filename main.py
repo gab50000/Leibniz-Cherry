@@ -2,13 +2,20 @@ import logging
 import os
 import time
 import tempfile
+from io import BytesIO
+from zipfile import ZipFile
+import subprocess
 
 import cherrypy
 from cherrypy.lib import static
+import sh
 
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
+
+
+PLASTEX_PATH = ""
 
 
 SUBMIT_FORM = """
@@ -22,11 +29,28 @@ SUBMIT_FORM = """
 """
 
 
-class Main:
-    @cherrypy.expose
-    def hello(self):
-        return "<b>Hello there</b>"
+def unpack(source_file, dest_dir):
+    zf = ZipFile(source_file)
+    zf.extractall(dest_dir)
 
+
+def process(dir_name):
+    contained_files = [os.path.join(dir_name, x) for x in os.listdir(dir_name)]
+    for x in contained_files:
+        logger.debug(f"Checking {x}")
+        if os.path.isfile(x) and x.endswith(".tex"):
+            logger.debug(f"Found file {x}")
+            subprocess.check_call([PLASTEX_PATH, x])
+            return x[:-4] + ".xml"
+    else:
+        logger.debug("Found no tex file")
+        if len(contained_files) == 1:
+            if os.path.isdir(contained_files[0]):
+                logger.debug(f"Found only one directory {contained_files[0]}")
+                return process(os.path.join(dir_name, contained_files[0]))
+
+
+class Main:
     @cherrypy.expose
     def index(self):
         return SUBMIT_FORM
@@ -35,24 +59,27 @@ class Main:
     def upload(self, my_file):
         if not my_file.filename.endswith(".zip"):
             return """
-            <p>Bitte ein Zipfile hochladen</p>
+            <p>Bitte eine Zip-Datei hochladen</p>
             <a href="/index">Zurück</a>
             """
 
-        tmpf = tempfile.NamedTemporaryFile(delete=False)
-        logger.debug(f"Temporary file {tmpf.name} created")
+        buf = BytesIO()
         while True:
             data = my_file.file.read(8192)
             if not data:
                 break
-            tmpf.write(data)
-        return '<META http-equiv="refresh" content="1;URL=/download?filename={}">'.format(tmpf.name)
-
-    @cherrypy.expose
-    def download(self, filename):
-        # TODO: Delete file after download
-        return static.serve_file(filename, "application/x-download", "attachment", 
-                                 "result.xml")
+            buf.write(data)
+        buf.seek(0)
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            logger.debug(f"Temporary file {tmp_dir} created")
+            unpack(buf, tmp_dir)
+            result = process(tmp_dir)
+            if result:
+                logger.debug(f"Result file: {result}")
+                return static.serve_file(os.path.join(tmp_dir, result), "application/x-download",
+                                         "attachment", "result.xml")
+            else:
+                return "<b> Keine Tex-Datei gefunden!</b>"
 
 
 if __name__ == "__main__":
