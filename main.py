@@ -6,6 +6,7 @@ from io import BytesIO
 from zipfile import ZipFile
 import subprocess
 import configparser
+from conf import PLASTEX_PATH
 
 import cherrypy
 from cherrypy.lib import static
@@ -15,8 +16,6 @@ import sh
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
-
-PLASTEX_PATH = ""
 
 cf = configparser.ConfigParser()
 cf.read("auth")
