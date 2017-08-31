@@ -1,0 +1,4 @@
+*
+!*.py
+!*.cfg
+conf.py
