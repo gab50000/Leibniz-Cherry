@@ -10,7 +10,6 @@ from conf import PLASTEX_PATH
 
 import cherrypy
 from cherrypy.lib import static
-import sh
 
 
 logger = logging.getLogger(__name__)
@@ -26,6 +25,7 @@ PASS = cf["auth"]["password"]
 SUBMIT_FORM = """
 <html><body>
     <h2>Zip-File auswählen:</h2>
+    <p> (Latex-Datei mit allen Unterdateien muss in dem gezippten Ordner liegen) </p>
     <form action="upload" method="post" enctype="multipart/form-data">
     <input type="file" name="my_file" /><br />
     <input type="submit" />
@@ -88,9 +88,8 @@ class Main:
                 return static.serve_file(os.path.join(tmp_dir, result), "application/x-download",
                                          "attachment", result)
             else:
-                return "<b> Keine Tex-Datei gefunden!</b>"
+                return "<b> Keine Tex-Datei gefunden! </b>"
 
 
 if __name__ == "__main__":
-    cherrypy.config.update("cherry.cfg")
     cherrypy.quickstart(Main(), "/", "cherry.cfg")
