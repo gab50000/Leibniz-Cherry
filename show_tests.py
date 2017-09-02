@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
 
-test_page_content = """
+TEST_PAGE_CONTENT = """
 <h2> Inhalt von {name} </h2>
 <h3> Tex-Datei </h3>
 <pre>
@@ -84,7 +84,7 @@ def show_test_factory(name):
         else:
             tex_content = ""
             xml_content = ""
-        return test_page_content.format(name=name, tex_content=tex_content, xml_content=xml_content,
+        return TEST_PAGE_CONTENT.format(name=name, tex_content=tex_content, xml_content=xml_content,
                                         link=HTMLLink("Zurück", "./"))
     return show_test
 

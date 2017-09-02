@@ -18,12 +18,6 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
 
-cf = configparser.ConfigParser()
-cf.read("auth")
-USER = cf["auth"]["user"]
-PASS = cf["auth"]["password"]
-
-
 SUBMIT_FORM = """
 <html><body>
     <h2>Zip-File auswählen:</h2>
@@ -57,11 +51,7 @@ def process(dir_name):
                 return process(os.path.join(dir_name, contained_files[0]))
 
 
-def authenticate(realm, user, password):
-    return user == USER and password == PASS
-
-
-class Main:
+class Convert:
     @cherrypy.expose
     def index(self):
         return SUBMIT_FORM
@@ -94,5 +84,5 @@ class Main:
 
 
 if __name__ == "__main__":
-    cherrypy.tree.mount(Main(), "/", "cherry.cfg")
+    cherrypy.tree.mount(Convert(), "/", "cherry.cfg")
     cherrypy.quickstart(Tests(), "/tests", "cherry.cfg")
