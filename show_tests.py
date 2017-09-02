@@ -1,23 +1,38 @@
 import logging
 import os
+import textwrap
 
 import cherrypy
 from cherrypy.lib import static
 
 from conf import TEST_PATH
-from helpers import HTMLList
+from helpers import HTMLList, HTMLLink
 
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
 
+test_page_content = """
+<h2> Inhalt von {name} </h2>
+<pre>
+{tex_content}
+</pre>
+
+{link}"""
+
 def show_test_factory(name):
     def show_test():
         dir_ = os.path.join(TEST_PATH, name)
+        latex_files = [f for f in os.listdir(dir_) if f.endswith(".tex")]
         logger.debug(f"Looking what's inside of {dir_}")
-        return f"""<h2> Inhalt von {name} </h2>
-        {str(HTMLList(os.listdir(dir_)))}"""
+        if latex_files:
+            with open(os.path.join(dir_, latex_files[0]), "r") as f:
+                tex_content = f.read()
+        else:
+            tex_content = ""
+        return test_page_content.format(name=name, tex_content=tex_content,
+                                        link=HTMLLink("Zurück", "./"))
     return show_test
 
 
@@ -32,7 +47,10 @@ class Tests:
 
     @cherrypy.expose
     def index(self):
-        return "Hello"
+        tests = [HTMLLink(x, f"{x}") for x in dir(self)
+                 if callable(getattr(self, x)) and not x.startswith("_") and not x == "index"]
+        return f""" <h2> Verfügbare Tests: </h2>
+        {str(HTMLList(tests))}"""
 
 
 if __name__ == "__main__":
