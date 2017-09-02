@@ -13,3 +13,13 @@ class HTMLList(list):
         return self.__add__(other)
 
 
+class HTMLLink:
+    def __init__(self, name, destination):
+        self.name = name
+        self.destination = destination
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return f'<a href="{self.destination}"> {self.name} </a>'
