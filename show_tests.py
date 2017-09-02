@@ -44,7 +44,8 @@ def compile_xml(dir_, filename):
     compile = False
     with cd(os.path.join(TEST_PATH, dir_)):
         if os.path.exists(filename):
-            current_hash = subprocess.check_output("git rev-parse HEAD".split()).strip()
+            current_hash = subprocess.check_output("git rev-parse HEAD".split())\
+                .decode("utf-8").strip()
             try:
                 with open(filename, "r") as f:
                     text = f.readline()
@@ -52,7 +53,10 @@ def compile_xml(dir_, filename):
                 logger.debug(f"Current Hash: {current_hash}")
                 logger.debug(f"XML Hash: {xml_hash}")
                 if xml_hash != current_hash:
+                    logger.debug("Hashes are different. Compile")
                     compile = True
+                else:
+                    logger.debug("Hashes are equal. Will just read XML File")
             except AttributeError:
                 logger.debug("Found no hash in XML file")
                 compile = True
@@ -60,7 +64,7 @@ def compile_xml(dir_, filename):
             compile = True
 
         if compile:
-            subprocess.check_call([PLASTEX_PATH, filename.replace(".xml", ".tex")])
+            subprocess.check_call([PLASTEX_PATH, filename.replace(".xml", ".tex"), "--commit"])
         with open(filename, "r") as f:
             output = f.read()
         return output
@@ -86,18 +90,19 @@ def show_test_factory(name):
 
 
 class Tests:
-    def __init__(self):
-        test_content = [x for x in os.listdir(TEST_PATH)
-                        if os.path.isdir(os.path.join(TEST_PATH, x))]
-        logger.debug(f"Found tests {test_content}")
-
-        for test in test_content:
-            setattr(self, test, cherrypy.expose(show_test_factory(test)))
+    def __getattribute__(self, name):
+        with cd(TEST_PATH):
+            test_dirs = [x for x in os.listdir(".") if os.path.isdir(x)]
+        logger.debug(f"Found tests {test_dirs}")
+        if name in test_dirs:
+            return cherrypy.expose(show_test_factory(name))
+        else:
+            return super().__getattribute__(name)
 
     @cherrypy.expose
     def index(self):
-        tests = [HTMLLink(x, f"{x}") for x in dir(self)
-                 if callable(getattr(self, x)) and not x.startswith("_") and not x == "index"]
+        tests = [HTMLLink(x, f"{x}") for x in os.listdir(TEST_PATH)
+                 if hasattr(self, x) and not x.startswith("_")]
         return f""" <h2> Verfügbare Tests: </h2>
         {str(HTMLList(tests))}"""
 
