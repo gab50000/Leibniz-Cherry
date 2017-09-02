@@ -11,6 +11,8 @@ from conf import PLASTEX_PATH
 import cherrypy
 from cherrypy.lib import static
 
+from show_tests import Tests
+
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
@@ -92,4 +94,5 @@ class Main:
 
 
 if __name__ == "__main__":
-    cherrypy.quickstart(Main(), "/", "cherry.cfg")
+    cherrypy.tree.mount(Main(), "/", "cherry.cfg")
+    cherrypy.quickstart(Tests(), "/tests", "cherry.cfg")
