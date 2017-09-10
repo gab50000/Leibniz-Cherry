@@ -1,4 +1,5 @@
 import configparser
+import os
 
 import cherrypy
 
@@ -8,9 +9,11 @@ from helpers import HTMLLink
 
 
 cf = configparser.ConfigParser()
-cf.read("auth")
+cf.read(os.path.join(os.path.dirname(__file__), "auth"))
 USER = cf["auth"]["user"]
 PASS = cf["auth"]["password"]
+
+config_path = os.path.join(os.path.dirname(__file__), "cherry.cfg")
 
 
 STARTPAGE = f"""
@@ -33,6 +36,6 @@ class Main:
 
 
 if __name__ == "__main__":
-    cherrypy.tree.mount(Main(), "/", "cherry.cfg")
-    cherrypy.tree.mount(Convert(), "/convert", "cherry.cfg")
-    cherrypy.quickstart(Tests(), "/tests", "cherry.cfg")
+    cherrypy.tree.mount(Main(), "/", config_path)
+    cherrypy.tree.mount(Convert(), "/convert", config_path)
+    cherrypy.quickstart(Tests(), "/tests", config_path)
