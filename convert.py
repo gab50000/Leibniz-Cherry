@@ -1,3 +1,4 @@
+import glob
 import logging
 import os
 import tempfile
@@ -5,6 +6,7 @@ from io import BytesIO
 from zipfile import ZipFile
 import subprocess
 import shutil
+from contextlib import contextmanager
 
 import cherrypy
 from cherrypy.lib import static
@@ -29,6 +31,14 @@ SUBMIT_FORM = """
 """
 
 
+@contextmanager
+def safe_cd(new_dir):
+    old_dir = os.getcwd()
+    os.chdir(new_dir)
+    yield
+    os.chdir(old_dir)
+
+
 def unpack(source_file, dest_dir):
     zf = ZipFile(source_file)
     zf.extractall(dest_dir)
@@ -40,7 +50,9 @@ def process(dir_name):
         logger.debug(f"Checking {x}")
         if os.path.isfile(x) and x.endswith(".tex"):
             logger.debug(f"Found file {x}")
-            subprocess.check_call([PLASTEX_PATH, x])
+            with safe_cd(dir_name):
+                filename = os.path.split(x)[-1]
+                subprocess.check_call([PLASTEX_PATH, filename])
             return x[:-4] + ".xml"
     else:
         logger.debug("Found no tex file")
@@ -79,6 +91,7 @@ class Convert:
             else:
                 with open(os.path.join(tmp_dir, my_file.filename), "wb") as f:
                     f.write(buf.read())
+            logger.debug(f"Files in tmp dir: {glob.glob(os.path.join(tmp_dir, '**/*'), recursive=True)}")
             result = process(tmp_dir)
             if result:
                 logger.debug(f"Result file: {result}")
